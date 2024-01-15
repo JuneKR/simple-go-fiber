@@ -16,7 +16,32 @@ type Book struct {
 	Author string `json: "author"`
 }
 
+type User struct {
+	Email    string `json: "email"`
+	Password string `json: "password"`
+}
+
 var books []Book
+
+var memberUser = User{
+	Email:    "user@example.com",
+	Password: "password123",
+}
+
+func login(c *fiber.Ctx) error {
+	user := new(User)
+	if err := c.BodyParser(user); err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+
+	if user.Email != memberUser.Email || user.Password != memberUser.Password {
+		return fiber.ErrUnauthorized
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Login success",
+	})
+}
 
 func checkMiddleware(c *fiber.Ctx) error {
 	start := time.Now()
@@ -38,6 +63,8 @@ func main() {
 
 	books = append(books, Book{ID: 1, Title: "New Journey", Author: "Mike"})
 	books = append(books, Book{ID: 2, Title: "New Journey 2", Author: "Mike"})
+
+	app.Post("/login", login)
 
 	app.Use(checkMiddleware)
 	app.Get("/books", getBooks)
@@ -78,4 +105,5 @@ func getEnv(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"SECRET": secret,
 	})
+
 }
