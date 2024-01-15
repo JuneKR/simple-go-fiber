@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
@@ -16,6 +18,17 @@ type Book struct {
 
 var books []Book
 
+func checkMiddleware(c *fiber.Ctx) error {
+	start := time.Now()
+
+	fmt.Printf(
+		"URL = %s, Method = %s, Time = %s\n",
+		c.OriginalURL(), c.Method(), start,
+	)
+
+	return c.Next()
+}
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("load .env error")
@@ -26,6 +39,7 @@ func main() {
 	books = append(books, Book{ID: 1, Title: "New Journey", Author: "Mike"})
 	books = append(books, Book{ID: 2, Title: "New Journey 2", Author: "Mike"})
 
+	app.Use(checkMiddleware)
 	app.Get("/books", getBooks)
 	app.Get("/books/:id", getBook)
 	app.Post("/books", createBook)
@@ -64,5 +78,4 @@ func getEnv(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"SECRET": secret,
 	})
-
 }
