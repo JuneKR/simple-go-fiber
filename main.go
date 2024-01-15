@@ -24,6 +24,7 @@ func main() {
 	app.Get("/books/:id", getBook)
 	app.Post("/books", createBook)
 	app.Put("/books/:id", updateBook)
+	app.Delete("books/:id", deleteBook)
 
 	app.Listen(":8081")
 }
@@ -75,6 +76,23 @@ func updateBook(c *fiber.Ctx) error {
 			books[i].Title = bookUpdate.Title
 			books[i].Author = bookUpdate.Author
 			return c.JSON(books[i])
+		}
+	}
+
+	return c.SendStatus(fiber.StatusNotFound)
+}
+
+func deleteBook(c *fiber.Ctx) error {
+	bookId, err := strconv.Atoi(c.Params("id"))
+
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+
+	for i, book := range books {
+		if book.ID == bookId {
+			books = append(books[:i], books[i+1:]...)
+			return c.SendStatus(fiber.StatusNoContent)
 		}
 	}
 
