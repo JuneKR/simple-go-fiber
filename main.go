@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -63,12 +62,12 @@ func login(c *fiber.Ctx) error {
 }
 
 func checkMiddleware(c *fiber.Ctx) error {
-	start := time.Now()
+	user := c.Locals("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
 
-	fmt.Printf(
-		"URL = %s, Method = %s, Time = %s\n",
-		c.OriginalURL(), c.Method(), start,
-	)
+	if claims["role"] != "admin" {
+		return fiber.ErrUnauthorized
+	}
 
 	return c.Next()
 }
@@ -85,12 +84,12 @@ func main() {
 
 	app.Post("/login", login)
 
-	app.Use(checkMiddleware)
-
 	// JWT Middleware
 	app.Use(jwtware.New(jwtware.Config{
-		SigningKey: jwtware.SigningKey{Key: []byte("secret")},
+		SigningKey: jwtware.SigningKey{Key: []byte(os.Getenv("JWT_SECRET"))},
 	}))
+
+	app.Use(checkMiddleware)
 
 	app.Get("/books", getBooks)
 	app.Get("/books/:id", getBook)
